@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brushcut — Process Reels, Evenly Sliced</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,700&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.5/build/mp4-muxer.min.js"></script>
+<style>
+  :root {
+    --bg: #faf9f5;
+    --surface: #ffffff;
+    --surface-soft: #f5f3eb;
+    --ink: #2d2d2a;
+    --ink-soft: #5a5a55;
+    --muted: #9a9890;
+    --muted-strong: #6d6c66;
+    --line: #ece9e0;
+    --line-soft: #f1eee5;
+    --accent: #d97757;
+    --accent-deep: #b85e3f;
+    --accent-soft: #fbe9dd;
+    --accent-tint: #fdf3ec;
+    --shadow-sm: 0 1px 2px rgba(45, 45, 42, 0.04);
+    --shadow-md: 0 4px 12px rgba(45, 45, 42, 0.06);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Geist', system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.55;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 64px 32px 96px;
+  }
+
+  /* ── Header ────────────────────────── */
+  header {
+    margin-bottom: 56px;
+    display: block;
+    grid-template-columns: none;
+    align-items: start;
+    gap: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144;
+    font-weight: 400;
+    font-size: clamp(40px, 6vw, 56px);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .brand em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--accent);
+  }
+  .tagline {
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--muted-strong);
+    text-align: left;
+    max-width: none;
+    line-height: 1.5;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .tagline br { display: none; }
+
+  /* ── Step Markers ──────────────────── */
+  .step {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--accent-deep);
+    margin-bottom: 8px;
+    display: block;
+    align-items: initial;
+    gap: 0;
+  }
+  .step::before {
+    content: none;
+  }
+
+  h2 {
+    font-family: inherit;
+    font-variation-settings: normal;
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  h2 em {
+    font-style: normal;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .sublabel {
+    color: var(--muted-strong);
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* ── Sections ──────────────────────── */
+  section.upload, section.settings {
+    margin-bottom: 32px;
+  }
+
+  /* ── Drop Zone ─────────────────────── */
+  .drop {
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 56px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: block;
+  }
+  .drop:hover, .drop.over {
+    border-color: var(--accent);
+    background: var(--accent-tint);
+  }
+  .drop-title {
+    font-family: inherit;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 17px;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+  .drop-hint {
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-strong);
+  }
+  .drop input { display: none; }
+
+  /* ── File List ─────────────────────── */
+  .files {
+    margin-top: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 4px 16px;
+    border-top: 1px solid var(--line);
+  }
+  .file-row {
+    display: grid;
+    grid-template-columns: 24px 1fr auto auto;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line-soft);
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .file-row:last-child { border-bottom: none; }
+  .file-num {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+  .file-dur {
+    color: var(--muted-strong);
+    font-variant-numeric: tabular-nums;
+  }
+  .file-x {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 18px;
+    line-height: 1;
+    padding: 6px 9px;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .file-x:hover {
+    color: var(--accent);
+    background: var(--accent-tint);
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 4px 8px;
+    border-top: 1px solid var(--line-soft);
+    margin-top: 4px;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-strong);
+  }
+  .total-row strong {
+    font-family: inherit;
+    font-style: normal;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0;
+    text-transform: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Settings Grid ─────────────────── */
+  .settings-grid {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+  .setting {
+    padding: 24px;
+    border-right: 1px solid var(--line-soft);
+  }
+  .setting:nth-child(2n) { border-right: none; }
+  .setting:nth-child(-n+2) { border-bottom: 1px solid var(--line-soft); }
+
+  .setting-label {
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-strong);
+    margin-bottom: 14px;
+  }
+  .setting-value {
+    font-family: inherit;
+    font-variation-settings: normal;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 18px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .setting-value .unit {
+    font-family: inherit;
+    font-style: normal;
+    font-size: 13px;
+    letter-spacing: 0;
+    color: var(--muted-strong);
+    margin-left: 8px;
+    text-transform: none;
+    font-weight: 400;
+  }
+
+  input[type=range] {
+    width: 100%;
+    appearance: none;
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 3px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow-sm);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 3px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow-sm);
+  }
+
+  .audio-toggle {
+    grid-column: 1 / -1;
+    padding: 16px 24px;
+    border-top: 1px solid var(--line-soft);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .audio-toggle input {
+    cursor: pointer;
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    margin: 0;
+  }
+
+  .computed {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: var(--accent-tint);
+    border-radius: var(--radius-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .computed-label {
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--accent-deep);
+  }
+  .computed-value {
+    font-family: inherit;
+    font-style: normal;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent-deep);
+  }
+
+  /* ── Format Selector ───────────────── */
+  .format-row {
+    margin-top: 16px;
+    border-bottom: none;
+    display: block;
+  }
+  .format-pills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .quality-pills {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .format-pill {
+    flex: initial;
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    user-select: none;
+    border-right: 1px solid var(--line-soft);
+  }
+  .format-pill:last-child { border-right: none; }
+  .format-pill input { display: none; }
+  .format-pill .fmt-name {
+    font-family: inherit;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .format-pill .fmt-note {
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-strong);
+  }
+  .format-pill.selected {
+    background: var(--accent-tint);
+  }
+  .format-pill.selected .fmt-name {
+    color: var(--accent-deep);
+    font-style: normal;
+  }
+  .format-pill.selected .fmt-note {
+    color: var(--accent-deep);
+    opacity: 0.8;
+  }
+  .format-pill.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .format-pill.disabled .fmt-note::after { content: ''; }
+
+  /* ── Build Button ──────────────────── */
+  .build-btn {
+    width: 100%;
+    padding: 18px 24px;
+    margin-top: 24px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: inherit;
+    font-variation-settings: normal;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 16px;
+    letter-spacing: 0;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+  }
+  .build-btn:hover:not(:disabled) {
+    background: var(--accent-deep);
+    box-shadow: var(--shadow-md);
+  }
+  .build-btn:disabled {
+    background: var(--line);
+    color: var(--muted);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 1;
+  }
+  .build-btn .arrow {
+    font-style: normal;
+    margin-left: 8px;
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+  .build-btn:hover:not(:disabled) .arrow { transform: translateX(4px); }
+
+  /* ── Processing ────────────────────── */
+  section.process {
+    display: none;
+    padding-top: 0;
+    margin-top: 40px;
+  }
+  section.process.active { display: block; }
+
+  .process-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .preview-frame {
+    background: var(--ink);
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--ink);
+    border-radius: var(--radius-sm);
+  }
+  .preview-frame canvas, .preview-frame video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: var(--ink);
+  }
+
+  .progress-pane { padding-top: 4px; }
+  .progress-num {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144;
+    font-weight: 300;
+    font-size: 64px;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .progress-num em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .progress-num .of {
+    font-family: inherit;
+    font-style: normal;
+    font-size: 14px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-strong);
+    margin-left: 12px;
+    vertical-align: middle;
+    font-weight: 400;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 24px 0 12px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 2px;
+  }
+  .progress-status {
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-strong);
+  }
+
+  .cancel-btn {
+    margin-top: 24px;
+    padding: 10px 16px;
+    background: var(--surface);
+    color: var(--muted-strong);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    transition: all 0.15s;
+  }
+  .cancel-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* ── Result ────────────────────────── */
+  section.result {
+    display: none;
+    padding-top: 0;
+    margin-top: 40px;
+  }
+  section.result.active { display: block; }
+
+  .result-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .result-text { padding-top: 8px; }
+  .result-title {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144;
+    font-weight: 300;
+    font-size: 44px;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+    color: var(--ink);
+  }
+  .result-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .result-meta {
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-strong);
+    margin-bottom: 24px;
+    line-height: 2;
+  }
+  .result-meta .v {
+    color: var(--ink);
+    margin-left: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .result-warning {
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    background: var(--accent-tint);
+    border: 1px solid var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    color: var(--accent-deep);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0;
+    line-height: 1.6;
+    word-break: break-word;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .action-btn {
+    padding: 14px 18px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    transition: all 0.15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .action-btn.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .action-btn.primary:hover {
+    background: var(--accent-deep);
+    border-color: var(--accent-deep);
+  }
+  .action-btn:hover {
+    background: var(--surface-soft);
+    border-color: var(--muted);
+  }
+  .action-btn .arr {
+    font-family: inherit;
+    font-style: normal;
+  }
+
+  /* ── Footer ────────────────────────── */
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line-soft);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-strong);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ── Mobile ────────────────────────── */
+  @media (max-width: 720px) {
+    .wrap { padding: 32px 20px 64px; }
+    .brand { font-size: 40px; }
+    .settings-grid { grid-template-columns: 1fr; }
+    .setting { border-right: none; border-bottom: 1px solid var(--line-soft); }
+    .setting:nth-child(-n+2) { border-bottom: 1px solid var(--line-soft); }
+    .setting:last-of-type { border-bottom: none; }
+    .format-pills { grid-template-columns: 1fr; }
+    .format-pill { border-right: none; border-bottom: 1px solid var(--line-soft); }
+    .format-pill:last-child { border-bottom: none; }
+    .process-wrap, .result-wrap { grid-template-columns: 1fr; padding: 16px; gap: 20px; }
+    .progress-num { font-size: 48px; }
+    .result-title { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1 class="brand">Brush<em>cut</em></h1>
+  <p class="tagline">Process reels, evenly sliced. Nothing added.</p>
+</header>
+
+<!-- ─────── Step 01 ─────── -->
+<section class="upload">
+  <div class="step">Step 01 — Drop your footage</div>
+  <h2>Add your <em>process clips</em></h2>
+  <p class="sublabel">One painting, one reel. Add every clip you recorded today — order matters, so drop them oldest first.</p>
+
+  <label class="drop" id="drop">
+    <div class="drop-title">Drop video files here</div>
+    <div class="drop-hint">or click to browse · mp4, mov, webm</div>
+    <input type="file" id="file-input" accept="video/*" multiple>
+  </label>
+
+  <div class="files" id="files" style="display:none">
+    <div id="file-list"></div>
+    <div class="total-row">
+      <span>Total source footage</span>
+      <strong id="total-dur">—</strong>
+    </div>
+  </div>
+</section>
+
+<!-- ─────── Step 02 ─────── -->
+<section class="settings">
+  <div class="step">Step 02 — Set the cut</div>
+  <h2>How long, how <em>fast</em></h2>
+  <p class="sublabel">Defaults match what you've been making by hand. Adjust if you want.</p>
+
+  <div class="settings-grid">
+    <div class="setting">
+      <div class="setting-label">Output length</div>
+      <div class="setting-value"><span id="out-len-v">90</span><span class="unit">seconds</span></div>
+      <input type="range" id="out-len" min="30" max="120" step="5" value="90">
+    </div>
+    <div class="setting">
+      <div class="setting-label">Each clip lasts</div>
+      <div class="setting-value"><span id="clip-len-v">1.5</span><span class="unit">seconds</span></div>
+      <input type="range" id="clip-len" min="0.5" max="3" step="0.25" value="1.5">
+    </div>
+    <div class="audio-toggle">
+      <input type="checkbox" id="motion-on" checked>
+      <label for="motion-on">Skip static moments — searches for motion when sampling (camera setup, breaks)</label>
+    </div>
+    <div class="audio-toggle">
+      <input type="checkbox" id="audio-on">
+      <label for="audio-on">Include audio from source clips (off by default — most artists add music after)</label>
+    </div>
+  </div>
+
+  <div class="format-row">
+    <div class="format-pills" id="format-pills">
+      <label class="format-pill selected" data-fmt="mp4">
+        <input type="radio" name="format" value="mp4" checked>
+        <span class="fmt-name">MP4</span>
+        <span class="fmt-note">Universal · Instagram, TikTok, anywhere</span>
+      </label>
+      <label class="format-pill" data-fmt="webm">
+        <input type="radio" name="format" value="webm">
+        <span class="fmt-name">WebM</span>
+        <span class="fmt-note">Smaller file · works on most platforms</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="format-row">
+    <div class="format-pills quality-pills">
+      <label class="format-pill" data-q="standard">
+        <input type="radio" name="quality" value="standard">
+        <span class="fmt-name">Standard</span>
+        <span class="fmt-note">8 Mbps · smaller files</span>
+      </label>
+      <label class="format-pill selected" data-q="high">
+        <input type="radio" name="quality" value="high" checked>
+        <span class="fmt-name">High</span>
+        <span class="fmt-note">16 Mbps · recommended</span>
+      </label>
+      <label class="format-pill" data-q="maximum">
+        <input type="radio" name="quality" value="maximum">
+        <span class="fmt-name">Maximum</span>
+        <span class="fmt-note">24 Mbps · up to 1440p</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="computed">
+    <span class="computed-label">→ Result</span>
+    <span class="computed-value"><span id="clip-count">60</span> clips, sampled evenly</span>
+  </div>
+</section>
+
+<!-- ─────── Build Button ─────── -->
+<button class="build-btn" id="build" disabled>
+  Build my reel <span class="arrow">→</span>
+</button>
+
+<!-- ─────── Processing ─────── -->
+<section class="process" id="process">
+  <div class="step" style="margin-top: 56px">Step 03 — Sampling</div>
+  <div class="process-wrap">
+    <div class="preview-frame">
+      <canvas id="preview-canvas"></canvas>
+    </div>
+    <div class="progress-pane">
+      <div class="progress-num">
+        <em id="prog-current">0</em><span class="of">of <span id="prog-total">60</span></span>
+      </div>
+      <div style="font-family: 'Fraunces', serif; font-style: italic; font-size: 22px; color: var(--ink-soft);" id="prog-label">clips captured</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-status" id="prog-status">Warming up...</div>
+      <button class="cancel-btn" id="cancel">Cancel</button>
+    </div>
+  </div>
+</section>
+
+<!-- ─────── Result ─────── -->
+<section class="result" id="result">
+  <div class="step" style="margin-top: 56px">Step 04 — Done</div>
+  <div class="result-wrap">
+    <div class="preview-frame">
+      <video id="result-video" controls playsinline></video>
+    </div>
+    <div class="result-text">
+      <div class="result-title">Ready to <em>post</em></div>
+      <div class="result-meta">
+        Length: <span class="v" id="r-length">—</span><br>
+        Clips: <span class="v" id="r-clips">—</span><br>
+        Resolution: <span class="v" id="r-res">—</span><br>
+        File size: <span class="v" id="r-size">—</span><br>
+        Format: <span class="v" id="r-format">—</span>
+      </div>
+      <div class="result-warning" id="r-warning" style="display:none"></div>
+      <div class="actions">
+        <a class="action-btn primary" id="download" download="brushcut-reel.webm">
+          Download reel <span class="arr">↓</span>
+        </a>
+        <button class="action-btn" id="redo">
+          Make another <span class="arr">↻</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>Brushcut · made for nimasha.art</span>
+  <span>Runs locally · nothing uploaded</span>
+</footer>
+
+</div>
+
+<script>
+// ─── State ──────────────────────────────────────────
+const state = {
+  files: [],          // { file, duration, width, height }
+  outputLength: 90,
+  clipLength: 1.5,
+  audioOn: false,
+  preferMotion: true,
+  format: 'mp4',
+  quality: 'high',
+  mp4Supported: false,
+  aborted: false,
+  wakeLock: null,
+  resultBlob: null,
+  resultUrl: null,
+};
+
+const QUALITY_PRESETS = {
+  standard: { bitrate: 8_000_000,  maxLongEdge: 1080 },
+  high:     { bitrate: 16_000_000, maxLongEdge: 1080 },
+  maximum:  { bitrate: 24_000_000, maxLongEdge: 1440 },
+};
+
+// ─── Utilities ──────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmtTime = secs => {
+  if (!isFinite(secs) || secs < 0) return '—';
+  const m = Math.floor(secs / 60);
+  const s = Math.round(secs % 60);
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+};
+const fmtSize = bytes => {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+
+function loadVideoMeta(file) {
+  return new Promise((resolve, reject) => {
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.muted = true;
+    v.playsInline = true;
+    const url = URL.createObjectURL(file);
+    v.src = url;
+    v.onloadedmetadata = () => {
+      const info = {
+        file,
+        duration: v.duration,
+        width: v.videoWidth,
+        height: v.videoHeight,
+        url,
+      };
+      // Release the metadata-reader video element to free decoder resources.
+      // The object URL stays valid — we'll re-attach it to the build's video element later.
+      v.removeAttribute('src');
+      v.load();
+      resolve(info);
+    };
+    v.onerror = () => {
+      const err = v.error;
+      const codes = {1:'aborted', 2:'network error', 3:'decode error', 4:'format not supported'};
+      const detail = err ? (codes[err.code] || `code ${err.code}`) : 'unknown';
+      reject(new Error(`${file.name}: ${detail}`));
+    };
+  });
+}
+
+// ─── File handling ──────────────────────────────────
+const drop = $('drop');
+const fileInput = $('file-input');
+
+['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.add('over');
+}));
+['dragleave', 'drop'].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.remove('over');
+}));
+drop.addEventListener('drop', ev => {
+  ev.preventDefault();
+  handleFiles(ev.dataTransfer.files);
+});
+fileInput.addEventListener('change', ev => handleFiles(ev.target.files));
+
+async function handleFiles(fileList) {
+  const incoming = Array.from(fileList).filter(f => f.type.startsWith('video/'));
+  if (!incoming.length) return;
+  for (const f of incoming) {
+    try {
+      const meta = await loadVideoMeta(f);
+      state.files.push(meta);
+    } catch (err) {
+      console.warn(err);
+      alert(`Skipped ${f.name} — couldn't read it`);
+    }
+  }
+  renderFiles();
+}
+
+function renderFiles() {
+  const list = $('file-list');
+  list.innerHTML = '';
+  state.files.forEach((f, i) => {
+    const row = document.createElement('div');
+    row.className = 'file-row';
+    row.innerHTML = `
+      <span class="file-num">${String(i + 1).padStart(2, '0')}</span>
+      <span class="file-name">${f.file.name}</span>
+      <span class="file-dur">${fmtTime(f.duration)}</span>
+      <button class="file-x" data-i="${i}">×</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.file-x').forEach(b => {
+    b.onclick = () => {
+      const i = +b.dataset.i;
+      URL.revokeObjectURL(state.files[i].url);
+      state.files.splice(i, 1);
+      renderFiles();
+    };
+  });
+  $('files').style.display = state.files.length ? 'block' : 'none';
+  const total = state.files.reduce((a, b) => a + b.duration, 0);
+  $('total-dur').textContent = fmtTime(total);
+  recompute();
+}
+
+// ─── Settings ───────────────────────────────────────
+$('out-len').addEventListener('input', e => {
+  state.outputLength = +e.target.value;
+  $('out-len-v').textContent = state.outputLength;
+  recompute();
+});
+$('clip-len').addEventListener('input', e => {
+  state.clipLength = +e.target.value;
+  $('clip-len-v').textContent = state.clipLength;
+  recompute();
+});
+$('audio-on').addEventListener('change', e => {
+  state.audioOn = e.target.checked;
+});
+
+$('motion-on').addEventListener('change', e => {
+  state.preferMotion = e.target.checked;
+});
+
+// ─── Format & quality selectors ─────────────────────
+document.querySelectorAll('.format-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    if (pill.classList.contains('disabled')) return;
+    // Only deselect siblings within the same pill group
+    const container = pill.parentElement;
+    container.querySelectorAll('.format-pill').forEach(p => p.classList.remove('selected'));
+    pill.classList.add('selected');
+    pill.querySelector('input').checked = true;
+    if (pill.dataset.fmt) state.format = pill.dataset.fmt;
+    if (pill.dataset.q) state.quality = pill.dataset.q;
+  });
+});
+
+// ─── MP4 capability detection ───────────────────────
+async function detectMp4Support() {
+  if (!('VideoEncoder' in window) || !window.Mp4Muxer) return false;
+  try {
+    const support = await VideoEncoder.isConfigSupported({
+      codec: 'avc1.42001f',
+      width: 1280,
+      height: 720,
+      bitrate: 5_000_000,
+      framerate: 30,
+    });
+    return support && support.supported === true;
+  } catch { return false; }
+}
+
+// Picks the most capable H.264 codec string the encoder supports
+// for the given resolution/bitrate. Higher profiles handle higher bitrates
+// and resolutions; we walk down from High Profile 4.2 to Constrained Baseline.
+async function pickH264Codec(width, height, bitrate, framerate) {
+  const candidates = [
+    'avc1.64002A', // High Profile, Level 4.2 (1080p60 / 1440p30 high bitrate)
+    'avc1.640029', // High Profile, Level 4.1
+    'avc1.640028', // High Profile, Level 4.0 (1080p30 up to ~25 Mbps)
+    'avc1.4D0028', // Main Profile, Level 4.0
+    'avc1.42E028', // Baseline, Level 4.0
+    'avc1.42E01F', // Constrained Baseline, Level 3.1
+    'avc1.42001F', // Constrained Baseline (original fallback)
+  ];
+  for (const codec of candidates) {
+    try {
+      const support = await VideoEncoder.isConfigSupported({ codec, width, height, bitrate, framerate });
+      if (support && support.supported) return codec;
+    } catch (e) { /* try next */ }
+  }
+  throw new Error(`No H.264 codec supports ${width}×${height} at ${(bitrate / 1e6).toFixed(0)} Mbps. Try a lower quality preset.`);
+}
+
+function recompute() {
+  const count = Math.floor(state.outputLength / state.clipLength);
+  $('clip-count').textContent = count;
+  const total = state.files.reduce((a, b) => a + b.duration, 0);
+  const need = count * state.clipLength;
+  const ok = state.files.length > 0 && total >= need;
+  $('build').disabled = !ok;
+  if (state.files.length > 0 && total < need) {
+    $('clip-count').textContent = `${count} (need ${fmtTime(need)} of source, you have ${fmtTime(total)})`;
+  }
+  updateQualityEstimates();
+}
+
+// Update the file-size estimate in each quality pill based on
+// current output length. Estimate = bitrate × duration / 8.
+function updateQualityEstimates() {
+  const seconds = state.outputLength;
+  Object.entries(QUALITY_PRESETS).forEach(([key, preset]) => {
+    const bytes = (preset.bitrate * seconds) / 8;
+    const mb = Math.round(bytes / 1024 / 1024);
+    const mbps = Math.round(preset.bitrate / 1e6);
+    const pill = document.querySelector(`.format-pill[data-q="${key}"]`);
+    if (pill) {
+      const note = pill.querySelector('.fmt-note');
+      if (note) note.textContent = `${mbps} Mbps · ~${mb} MB`;
+    }
+  });
+}
+
+// ─── Plan segments ──────────────────────────────────
+function planSegments() {
+  const count = Math.floor(state.outputLength / state.clipLength);
+  const total = state.files.reduce((a, b) => a + b.duration, 0);
+
+  // Build per-file boundaries on a global timeline
+  let acc = 0;
+  const bounds = state.files.map(f => {
+    const start = acc;
+    acc += f.duration;
+    return { start, end: acc };
+  });
+
+  // Evenly space segment START times across the source, leaving room for clip length at end
+  const usableEnd = Math.max(0, total - state.clipLength);
+  const segments = [];
+  for (let i = 0; i < count; i++) {
+    const t = count === 1 ? 0 : (usableEnd * i) / (count - 1);
+    // Find the file containing time t
+    const fileIdx = bounds.findIndex(b => t >= b.start && t < b.end);
+    const idx = fileIdx === -1 ? bounds.length - 1 : fileIdx;
+    const localStart = t - bounds[idx].start;
+    // Cap clip length so it doesn't run past the end of this file
+    const maxLocalDur = state.files[idx].duration - localStart;
+    const dur = Math.min(state.clipLength, maxLocalDur);
+    if (dur >= 0.2) {
+      segments.push({ fileIdx: idx, startTime: localStart, duration: dur });
+    }
+  }
+  return segments;
+}
+
+// ─── Pick WebM mime type ────────────────────────────
+function pickWebmMime() {
+  const types = [
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+  ];
+  for (const t of types) {
+    if (MediaRecorder.isTypeSupported(t)) return t;
+  }
+  return '';
+}
+
+// ─── Capture loop ───────────────────────────────────
+function waitForSeek(v) {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = () => { if (!done) { done = true; v.removeEventListener('seeked', finish); resolve(); } };
+    v.addEventListener('seeked', finish, { once: true });
+    setTimeout(finish, 1500);
+  });
+}
+
+function drawVideoLetterboxed(v, ctx) {
+  const cw = ctx.canvas.width, ch = ctx.canvas.height;
+  const vr = v.videoWidth / v.videoHeight;
+  const cr = cw / ch;
+  let dw, dh, dx, dy;
+  if (vr > cr) {
+    dw = cw; dh = cw / vr; dx = 0; dy = (ch - dh) / 2;
+  } else {
+    dh = ch; dw = ch * vr; dy = 0; dx = (cw - dw) / 2;
+  }
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, cw, ch);
+  ctx.drawImage(v, dx, dy, dw, dh);
+}
+
+async function captureClip(v, ctx, durationSec) {
+  v.play().catch(() => {});  // fire-and-forget: never await on mobile
+  return new Promise(resolve => {
+    const startWall = performance.now();
+    function tick() {
+      const elapsed = (performance.now() - startWall) / 1000;
+      drawVideoLetterboxed(v, ctx);
+      if (elapsed >= durationSec) {
+        v.pause();
+        resolve();
+        return;
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  });
+}
+
+async function captureClipToEncoder(v, ctx, durationSec, encoder, baseTimestampUs, baseFrameCount, fps) {
+  v.play().catch(() => {});  // fire-and-forget: never await on mobile
+  const frameInterval = 1000 / fps;
+  const totalFrames = Math.round(durationSec * fps);
+
+  for (let i = 0; i < totalFrames; i++) {
+    const targetWall = performance.now() + frameInterval;
+    drawVideoLetterboxed(v, ctx);
+
+    const tsUs = baseTimestampUs + Math.round((i / fps) * 1_000_000);
+    const totalFrame = baseFrameCount + i;
+    const frame = new VideoFrame(ctx.canvas, {
+      timestamp: tsUs,
+      duration: Math.round(1_000_000 / fps),
+    });
+    encoder.encode(frame, { keyFrame: totalFrame % 60 === 0 });
+    frame.close();
+
+    while (performance.now() < targetWall) {
+      await new Promise(r => requestAnimationFrame(r));
+    }
+  }
+  v.pause();
+  return {
+    endTimestampUs: baseTimestampUs + Math.round(durationSec * 1_000_000),
+    frameCount: baseFrameCount + totalFrames,
+  };
+}
+
+function updateProgress(current, total) {
+  const pct = (current / total) * 100;
+  $('prog-current').textContent = current;
+  $('progress-fill').style.width = `${pct}%`;
+  $('prog-status').textContent = `Clip ${current} of ${total} captured`;
+}
+
+// ─── Motion detection ───────────────────────────────
+// Briefly plays the video at the candidate time and measures pixel-level
+// frame-to-frame changes at low resolution. Returns an "average diff per
+// comparison" score. Static footage scores near 0; clear motion scores 10000+.
+const MOTION_CANVAS_W = 80;
+const MOTION_CANVAS_H = 45;
+const MOTION_THRESHOLD = 10000;
+const MOTION_CHECK_DURATION = 0.3;
+const MOTION_MAX_TRIES = 6;
+const MOTION_STEP_SEC = 2;
+
+let motionCanvas = null;
+let motionCtx = null;
+function getMotionCanvas() {
+  if (!motionCanvas) {
+    motionCanvas = document.createElement('canvas');
+    motionCanvas.width = MOTION_CANVAS_W;
+    motionCanvas.height = MOTION_CANVAS_H;
+    motionCtx = motionCanvas.getContext('2d', { willReadFrequently: true });
+  }
+  return { canvas: motionCanvas, ctx: motionCtx };
+}
+
+async function checkMotion(v, startTime) {
+  v.currentTime = startTime;
+  await waitForSeek(v);
+  v.play().catch(() => {});
+
+  const { canvas: tc, ctx: tctx } = getMotionCanvas();
+  let prevData = null;
+  let totalDiff = 0;
+  let comparisons = 0;
+
+  return new Promise(resolve => {
+    const startWall = performance.now();
+    function tick() {
+      if (performance.now() - startWall > MOTION_CHECK_DURATION * 1000) {
+        v.pause();
+        resolve(comparisons > 0 ? totalDiff / comparisons : 0);
+        return;
+      }
+      try {
+        tctx.drawImage(v, 0, 0, MOTION_CANVAS_W, MOTION_CANVAS_H);
+        const data = tctx.getImageData(0, 0, MOTION_CANVAS_W, MOTION_CANVAS_H).data;
+        if (prevData) {
+          let diff = 0;
+          for (let j = 0; j < data.length; j += 4) {
+            // Compare grayscale (sum of RGB)
+            const g1 = data[j] + data[j + 1] + data[j + 2];
+            const g2 = prevData[j] + prevData[j + 1] + prevData[j + 2];
+            diff += Math.abs(g1 - g2);
+          }
+          totalDiff += diff;
+          comparisons++;
+        }
+        prevData = data;
+      } catch (e) { /* draw can throw if video isn't ready */ }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  });
+}
+
+// Returns a start time within [plannedStart, plannedStart + maxOffset]
+// where motion is detected. Falls back to plannedStart if nothing found.
+async function findActiveStart(v, plannedStart, fileDuration, clipLength, statusFn) {
+  for (let attempt = 0; attempt < MOTION_MAX_TRIES; attempt++) {
+    const candidate = plannedStart + attempt * MOTION_STEP_SEC;
+    if (candidate + clipLength > fileDuration) break;
+    if (statusFn && attempt > 0) statusFn(`Searching for motion (try ${attempt + 1})...`);
+
+    try {
+      const score = await withTimeout(checkMotion(v, candidate), 5000, 'motion check stalled');
+      if (score > MOTION_THRESHOLD) return candidate;
+    } catch (e) {
+      console.warn('[brushcut] motion check failed:', e.message);
+      return plannedStart;
+    }
+  }
+  return plannedStart;
+}
+
+// ─── Build ──────────────────────────────────────────
+$('build').addEventListener('click', startBuild);
+
+async function startBuild() {
+  $('build').disabled = true;
+  $('process').classList.add('active');
+  $('result').classList.remove('active');
+
+  const segments = planSegments();
+  $('prog-total').textContent = segments.length;
+  $('prog-current').textContent = '0';
+  $('progress-fill').style.width = '0%';
+  $('prog-status').textContent = 'Setting up canvas...';
+
+  // Output dimensions: capped per quality preset, even numbers
+  const preset = QUALITY_PRESETS[state.quality];
+  const first = state.files[0];
+  let outW = first.width, outH = first.height;
+  const longEdge = Math.max(outW, outH);
+  if (longEdge > preset.maxLongEdge) {
+    const scale = preset.maxLongEdge / longEdge;
+    outW = Math.round(outW * scale);
+    outH = Math.round(outH * scale);
+  }
+  outW -= outW % 2;
+  outH -= outH % 2;
+  state.outputW = outW;
+  state.outputH = outH;
+
+  const canvas = $('preview-canvas');
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, outW, outH);
+
+  // Hidden video element (single, source-swapped between files)
+  const v = document.createElement('video');
+  v.muted = !state.audioOn;
+  v.playsInline = true;
+  v.preload = 'auto';
+  v.crossOrigin = 'anonymous';
+  let currentFileIdx = -1;
+
+  async function ensureFileLoaded(idx) {
+    if (currentFileIdx === idx) return;
+
+    // Explicit cleanup of previous source — releases decoder resources on mobile
+    if (currentFileIdx !== -1) {
+      v.pause();
+      v.removeAttribute('src');
+      v.load();
+      // Brief delay so the browser actually releases the previous decoder
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    console.log(`[brushcut] Loading file ${idx + 1}: ${state.files[idx].file.name}`);
+
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const cleanup = () => {
+        v.removeEventListener('canplay', onReady);
+        v.removeEventListener('error', onError);
+      };
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true; cleanup();
+        reject(new Error(`File ${idx + 1} took too long to load (${state.files[idx].file.name})`));
+      }, 30000);
+      const onReady = () => {
+        if (settled) return;
+        settled = true; clearTimeout(timer); cleanup();
+        resolve();
+      };
+      const onError = () => {
+        if (settled) return;
+        settled = true; clearTimeout(timer); cleanup();
+        const err = v.error;
+        const codes = {1:'aborted', 2:'network error', 3:'decode error', 4:'format not supported'};
+        const detail = err ? (codes[err.code] || `code ${err.code}`) : 'unknown';
+        const errMsg = err && err.message ? `: ${err.message}` : '';
+        const fileName = state.files[idx].file.name;
+        console.error(`[brushcut] File ${idx + 1} (${fileName}) failed: ${detail}${errMsg}`);
+        reject(new Error(`File ${idx + 1} (${fileName}) — ${detail}${errMsg}`));
+      };
+      v.addEventListener('canplay', onReady, { once: true });
+      v.addEventListener('error', onError, { once: true });
+      v.src = state.files[idx].url;
+      v.load();
+      currentFileIdx = idx;
+    });
+  }
+
+  // Acquire wake lock so the screen doesn't sleep during long encodes
+  state.wakeLock = null;
+  if ('wakeLock' in navigator) {
+    try { state.wakeLock = await navigator.wakeLock.request('screen'); } catch {}
+  }
+
+  state.aborted = false;
+
+  try {
+    await ensureFileLoaded(0);
+    if (state.format === 'mp4' && state.mp4Supported) {
+      await buildMp4(segments, v, ensureFileLoaded, canvas, ctx, outW, outH);
+    } else {
+      await buildWebm(segments, v, ensureFileLoaded, canvas, ctx);
+    }
+  } catch (err) {
+    console.error('[brushcut]', err);
+    if (state.aborted) {
+      $('prog-status').textContent = 'Cancelled.';
+      $('process').classList.remove('active');
+    } else {
+      $('prog-status').textContent = `Error: ${err.message}`;
+      alert(`${err.message}\n\nIf this keeps happening, try the other format. Also see the console (chrome://inspect on desktop) for details.`);
+    }
+    $('build').disabled = false;
+  } finally {
+    if (state.wakeLock) {
+      try { await state.wakeLock.release(); } catch {}
+      state.wakeLock = null;
+    }
+  }
+}
+
+function checkAbort() {
+  if (state.aborted) throw new Error('Cancelled by user');
+}
+
+// Per-segment hard timeout — if a single seek-and-capture takes more than 30s, bail
+function withTimeout(promise, ms, msg) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(msg)), ms)),
+  ]);
+}
+
+// ─── WebM via MediaRecorder ─────────────────────────
+async function buildWebm(segments, v, loadFile, canvas, ctx) {
+  const mime = pickWebmMime();
+  if (!mime) throw new Error("Browser doesn't support WebM recording.");
+
+  const stream = canvas.captureStream(30);
+
+  let audioCtx = null;
+  if (state.audioOn) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const dest = audioCtx.createMediaStreamDestination();
+      v.muted = false;
+      const src = audioCtx.createMediaElementSource(v);
+      src.connect(dest);
+      src.connect(audioCtx.destination);  // also play through speakers
+      dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+    } catch (e) { console.warn('Audio mix failed:', e); }
+  }
+
+  const recorder = new MediaRecorder(stream, {
+    mimeType: mime,
+    videoBitsPerSecond: QUALITY_PRESETS[state.quality].bitrate,
+  });
+  const chunks = [];
+  recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+  const stopped = new Promise(r => recorder.onstop = r);
+
+  recorder.start();
+  $('prog-status').textContent = 'Capturing clips...';
+
+  const failedFiles = new Set();
+  let capturedClips = 0;
+  let motionShifts = 0;
+  for (let i = 0; i < segments.length; i++) {
+    checkAbort();
+    const seg = segments[i];
+
+    // Skip segments from already-known-bad files
+    if (failedFiles.has(seg.fileIdx)) {
+      updateProgress(i + 1, segments.length);
+      continue;
+    }
+
+    // Try to load the file; if it fails, mark it bad and skip
+    try {
+      await withTimeout(loadFile(seg.fileIdx), 30000, `File swap stalled on clip ${i + 1}`);
+    } catch (loadErr) {
+      console.warn(`[brushcut] ${loadErr.message} — skipping all clips from this file`);
+      failedFiles.add(seg.fileIdx);
+      updateProgress(i + 1, segments.length);
+      continue;
+    }
+
+    let startTime = seg.startTime;
+    if (state.preferMotion) {
+      const fileDur = state.files[seg.fileIdx].duration;
+      const setStatus = msg => $('prog-status').textContent = `Clip ${i + 1} of ${segments.length} — ${msg}`;
+      setStatus('checking for motion...');
+      const adjusted = await findActiveStart(v, seg.startTime, fileDur, seg.duration, setStatus);
+      if (adjusted !== seg.startTime) motionShifts++;
+      startTime = adjusted;
+    }
+
+    v.currentTime = startTime;
+    await withTimeout(waitForSeek(v), 10000, `Seek stalled on clip ${i + 1}`);
+    await withTimeout(captureClip(v, ctx, seg.duration), 15000, `Capture stalled on clip ${i + 1}`);
+    capturedClips++;
+    updateProgress(i + 1, segments.length);
+  }
+  if (motionShifts > 0) console.log(`[brushcut] ${motionShifts} clips repositioned to find motion`);
+  if (failedFiles.size > 0) console.log(`[brushcut] ${failedFiles.size} files skipped, ${capturedClips} clips captured`);
+
+  $('prog-status').textContent = 'Finalizing...';
+  recorder.stop();
+  await stopped;
+  if (audioCtx) try { audioCtx.close(); } catch {}
+
+  if (capturedClips === 0) throw new Error('No clips captured — all files failed to load.');
+  const blob = new Blob(chunks, { type: mime });
+  finishBuild(blob, mime, capturedClips, failedFiles);
+}
+
+// ─── MP4 via WebCodecs + mp4-muxer ──────────────────
+async function buildMp4(segments, v, loadFile, canvas, ctx, outW, outH) {
+  if (!window.Mp4Muxer) {
+    throw new Error('mp4-muxer library failed to load. Use WebM instead.');
+  }
+
+  const FPS = 30;
+  const bitrate = QUALITY_PRESETS[state.quality].bitrate;
+  const codec = await pickH264Codec(outW, outH, bitrate, FPS);
+  console.log(`[brushcut] MP4 encode: ${outW}×${outH} @ ${(bitrate/1e6).toFixed(0)} Mbps, codec ${codec}`);
+
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: 'avc', width: outW, height: outH },
+    fastStart: 'in-memory',
+  });
+
+  let encoderError = null;
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: e => { encoderError = e; console.error('[brushcut] Encoder error:', e); },
+  });
+  encoder.configure({
+    codec,
+    width: outW,
+    height: outH,
+    bitrate,
+    framerate: FPS,
+  });
+
+  $('prog-status').textContent = 'Capturing clips...';
+  let timestampUs = 0;
+  let frameCount = 0;
+  let motionShifts = 0;
+  let capturedClips = 0;
+  const failedFiles = new Set();
+
+  for (let i = 0; i < segments.length; i++) {
+    checkAbort();
+    if (encoderError) throw new Error(`Encoder failed: ${encoderError.message}`);
+
+    const seg = segments[i];
+
+    if (failedFiles.has(seg.fileIdx)) {
+      updateProgress(i + 1, segments.length);
+      continue;
+    }
+
+    try {
+      await withTimeout(loadFile(seg.fileIdx), 30000, `File swap stalled on clip ${i + 1}`);
+    } catch (loadErr) {
+      console.warn(`[brushcut] ${loadErr.message} — skipping all clips from this file`);
+      failedFiles.add(seg.fileIdx);
+      updateProgress(i + 1, segments.length);
+      continue;
+    }
+
+    let startTime = seg.startTime;
+    if (state.preferMotion) {
+      const fileDur = state.files[seg.fileIdx].duration;
+      const setStatus = msg => $('prog-status').textContent = `Clip ${i + 1} of ${segments.length} — ${msg}`;
+      setStatus('checking for motion...');
+      const adjusted = await findActiveStart(v, seg.startTime, fileDur, seg.duration, setStatus);
+      if (adjusted !== seg.startTime) motionShifts++;
+      startTime = adjusted;
+    }
+
+    v.currentTime = startTime;
+    await withTimeout(waitForSeek(v), 10000, `Seek stalled on clip ${i + 1}`);
+
+    const result = await withTimeout(
+      captureClipToEncoder(v, ctx, seg.duration, encoder, timestampUs, frameCount, FPS),
+      15000,
+      `Capture stalled on clip ${i + 1}`
+    );
+    timestampUs = result.endTimestampUs;
+    frameCount = result.frameCount;
+    capturedClips++;
+
+    updateProgress(i + 1, segments.length);
+  }
+  if (motionShifts > 0) console.log(`[brushcut] ${motionShifts} clips repositioned to find motion`);
+  if (failedFiles.size > 0) console.log(`[brushcut] ${failedFiles.size} files skipped, ${capturedClips} clips captured`);
+
+  if (capturedClips === 0) throw new Error('No clips captured — all files failed to load.');
+
+  $('prog-status').textContent = 'Finalizing MP4...';
+  await encoder.flush();
+  encoder.close();
+  muxer.finalize();
+
+  const buffer = muxer.target.buffer;
+  const blob = new Blob([buffer], { type: 'video/mp4' });
+  finishBuild(blob, 'video/mp4', capturedClips, failedFiles);
+}
+
+function finishBuild(blob, mime, clipCount, failedFiles) {
+  state.resultBlob = blob;
+  if (state.resultUrl) URL.revokeObjectURL(state.resultUrl);
+  state.resultUrl = URL.createObjectURL(blob);
+  showResult(clipCount, mime, failedFiles);
+}
+
+function showResult(clipCount, mime, failedFiles) {
+  $('process').classList.remove('active');
+  $('result').classList.add('active');
+
+  const v = $('result-video');
+  v.src = state.resultUrl;
+
+  $('r-length').textContent = `${(clipCount * state.clipLength).toFixed(1)}s`;
+  $('r-clips').textContent = `${clipCount} clips × ${state.clipLength}s`;
+  $('r-res').textContent = state.outputW && state.outputH ? `${state.outputW}×${state.outputH}` : '—';
+  $('r-size').textContent = fmtSize(state.resultBlob.size);
+  $('r-format').textContent = mime.includes('mp4') ? 'MP4' : 'WebM';
+
+  // Show a warning if any files were skipped
+  const warn = $('r-warning');
+  if (failedFiles && failedFiles.size > 0) {
+    const names = [...failedFiles].map(idx => state.files[idx].file.name).join(', ');
+    warn.textContent = `⚠ ${failedFiles.size} file${failedFiles.size > 1 ? 's' : ''} skipped: ${names}`;
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+
+  const dl = $('download');
+  dl.href = state.resultUrl;
+  const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+  const stamp = new Date().toISOString().slice(0, 10);
+  dl.download = `brushcut-${stamp}.${ext}`;
+
+  $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+$('redo').addEventListener('click', () => {
+  $('result').classList.remove('active');
+  $('build').disabled = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+$('cancel').addEventListener('click', () => {
+  state.aborted = true;
+  $('prog-status').textContent = 'Cancelling...';
+});
+
+// Re-acquire wake lock if the page becomes visible again mid-build
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && state.wakeLock === null && 'wakeLock' in navigator) {
+    // Only re-acquire if a build is in progress (process section visible)
+    if ($('process').classList.contains('active')) {
+      try { state.wakeLock = await navigator.wakeLock.request('screen'); } catch {}
+    }
+  }
+});
+
+// Initial state
+recompute();
+
+// MP4 capability check — if not supported, fall back to WebM
+(async function init() {
+  state.mp4Supported = await detectMp4Support();
+  if (!state.mp4Supported) {
+    const mp4Pill = document.querySelector('[data-fmt="mp4"]');
+    const webmPill = document.querySelector('[data-fmt="webm"]');
+    mp4Pill.classList.add('disabled');
+    mp4Pill.classList.remove('selected');
+    mp4Pill.querySelector('.fmt-note').textContent = 'Needs newer browser';
+    webmPill.classList.add('selected');
+    webmPill.querySelector('input').checked = true;
+    state.format = 'webm';
+  }
+})();
+</script>
+</body>
+</html>
